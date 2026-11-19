@@ -242,7 +242,7 @@ Return JSON: {"subject":"...","body":"...","hook":"the hook phrase","hook_fact_i
     }
     const passed = !failed.length && (rev?.avg ?? 0) >= REVIEW_PASS && !(rev?.unsupported?.length ?? 0);
     attempts.push({ n, subject: d.subject, body: d.body, hookFactId: d.hook_fact_id ?? null, checks, review: rev, passed });
-    emit(`Draft ${n}: ${failed.length ? `${failed.length} rule(s) failed: ${failed.map((c) => c.name).join("; ")}` : `rules pass · reviewer ${rev?.avg}/10`}${passed ? " ✓" : ""}`);
+    emit(`Draft ${n}: ${failed.length ? `${failed.length} rule(s) failed: ${failed.map((c) => c.name).join("; ")}` : `rules pass · ${rev ? `reviewer ${rev.avg}/10${rev.unsupported?.length ? " · unsupported claim, rewriting" : ""}` : "reviewer unavailable, rewriting"}`}${passed ? " ✓" : ""}`);
     if (passed) {
       return {
         subject: d.subject,
