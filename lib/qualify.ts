@@ -572,7 +572,8 @@ export async function runAgentLoop(ctx: LoopCtx) {
     }
     const unknown = sc.signals.filter((s) => s.status === "unknown").sort((a, b) => b.max - a.max);
     let choice: Choice | null = null;
-    try {
+    // after 60 s of research the code ladder picks the next tool (saves an AI call per turn)
+    if (Date.now() - t0 < 60_000) try {
       const { data } = await geminiJson<Choice>({
         usage: ctx.usage,
         system: "You are the research planner in a lead-qualification agent. You choose the single most informative next tool call. Answer with JSON only.",

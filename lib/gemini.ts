@@ -13,7 +13,7 @@ const PRICE_OUT = 2.5;
 
 function models(): string[] {
   const env = process.env.GEMINI_MODEL?.trim();
-  return [...new Set([env, "gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash"].filter(Boolean) as string[])];
+  return [...new Set([env, "gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-flash-latest", "gemini-3.5-flash"].filter(Boolean) as string[])];
 }
 
 export class GeminiError extends Error {
@@ -130,63 +130,108 @@ async function viaGenerate(model: string, key: string, opts: Opts, signal: Abort
   return { text, sources, inTok: u.promptTokenCount ?? 0, outTok: (u.candidatesTokenCount ?? 0) + (u.thoughtsTokenCount ?? 0) };
 }
 
+type Attempt = { text: string; sources: { title: string; uri: string }[]; inTok: number; outTok: number };
+
+async function attemptOnce(model: string, key: string, opts: Opts, m: "interactions" | "generate", signal: AbortSignal): Promise<Attempt> {
+  await pace();
+  const r = m === "interactions" ? await viaInteractions(model, key, opts, signal) : await viaGenerate(model, key, opts, signal);
+  if (!r.text) throw new GeminiError(`${model}: empty response`, 502);
+  return r;
+}
+
+function benchFor(err: GeminiError): number {
+  if (err.status === 404) return 3_600_000; // model not offered to this key
+  if (err.status === 429 || /quota|exceeded/i.test(err.message)) return 600_000; // out of quota: 10 min
+  if (err.status === 503 || !err.status || err.status === 502 || err.status === 500) return 180_000; // overloaded / hung / empty
+  return 60_000;
+}
+
+// Hedged call: start the best healthy model; if it has not answered within HEDGE_MS, start the next one too.
+// First success wins and the others are cancelled. Failures bench the model so later calls skip it.
+const HEDGE_MS = 8_000;
+
+async function hedged(list: string[], key: string, opts: Opts, m: "interactions" | "generate"): Promise<{ r: Attempt; model: string }> {
+  return new Promise((resolve, reject) => {
+    const ctrls: AbortController[] = [];
+    let next = 0;
+    let inflight = 0;
+    let done = false;
+    let lastErr: GeminiError | null = null;
+    let hedgeTimer: ReturnType<typeof setTimeout> | null = null;
+    const finish = () => {
+      done = true;
+      if (hedgeTimer) clearTimeout(hedgeTimer);
+      ctrls.forEach((c) => c.abort());
+    };
+    const launch = () => {
+      if (done || next >= list.length) return;
+      const model = list[next++];
+      const ctrl = new AbortController();
+      ctrls.push(ctrl);
+      inflight++;
+      const timer = setTimeout(() => ctrl.abort(), opts.search ? 60_000 : 45_000);
+      attemptOnce(model, key, opts, m, ctrl.signal)
+        .then((r) => {
+          if (done) return;
+          finish();
+          resolve({ r, model });
+        })
+        .catch((e) => {
+          const err = e instanceof GeminiError ? e : new GeminiError(String((e as Error)?.message ?? e));
+          if (done) return;
+          lastErr = err;
+          if (err.status === 401 || err.status === 403) {
+            finish();
+            reject(err);
+            return;
+          }
+          if (opts.search && /quota|exceeded/i.test(err.message)) {
+            finish();
+            reject(err); // caller falls back to news headlines
+            return;
+          }
+          bench(model, benchFor(err));
+          launch(); // replace the failed attempt right away
+        })
+        .finally(() => {
+          clearTimeout(timer);
+          inflight--;
+          if (!done && inflight === 0 && next >= list.length) {
+            finish();
+            reject(lastErr ?? new GeminiError("Gemini call failed"));
+          }
+        });
+      if (hedgeTimer) clearTimeout(hedgeTimer);
+      hedgeTimer = setTimeout(launch, HEDGE_MS);
+    };
+    launch();
+  });
+}
+
 export async function gemini(opts: Opts): Promise<GeminiOut> {
   const key = process.env.GEMINI_API_KEY?.trim();
   if (!key) throw new GeminiError("GEMINI_API_KEY is not set");
   const ordered = workingModel ? [workingModel, ...models().filter((m) => m !== workingModel)] : models();
-  // circuit breaker: skip models that just failed or hung, unless every model is benched
   const healthy = ordered.filter((m) => (benchedUntil.get(m) ?? 0) < Date.now());
-  const list = healthy.length ? healthy : ordered;
+  const list = healthy.length ? healthy : ordered; // if everything is benched, try them all again
   const modes: ("interactions" | "generate")[] = mode ? [mode] : ["interactions", "generate"];
   let lastErr: GeminiError | null = null;
-
   for (const m of modes) {
-    for (const model of list) {
-      for (let attempt = 0; attempt < 5; attempt++) {
-        await pace();
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), opts.search ? 40_000 : 25_000);
-        try {
-          const r = m === "interactions" ? await viaInteractions(model, key, opts, ctrl.signal) : await viaGenerate(model, key, opts, ctrl.signal);
-          if (opts.usage) {
-            opts.usage.calls += 1;
-            opts.usage.inTokens += r.inTok;
-            opts.usage.outTokens += r.outTok;
-            opts.usage.usd = (opts.usage.inTokens * PRICE_IN + opts.usage.outTokens * PRICE_OUT) / 1e6;
-          }
-          if (!r.text) {
-            lastErr = new GeminiError(`${model}: empty response`);
-            continue;
-          }
-          mode = m;
-          workingModel = model;
-          return { text: r.text, sources: r.sources, model };
-        } catch (e) {
-          const err = e instanceof GeminiError ? e : new GeminiError(String((e as Error)?.message ?? e));
-          lastErr = err;
-          if (err.status === 401 || err.status === 403) throw err; // bad key
-          if (err.status === 404) {
-            bench(model, 3_600_000);
-            break; // model or endpoint not available: next model
-          }
-          if (err.status === 503 || !err.status) {
-            bench(model, 180_000);
-            break; // overloaded or timed out: bench it and use the next model now
-          }
-          if (/quota/i.test(err.message) && opts.search) throw err; // search quota: caller falls back
-          if (err.status === 429 || err.status === 500) {
-            if (attempt >= 2) {
-              bench(model, 120_000);
-              break;
-            }
-            await sleep(4000 * (attempt + 1));
-            continue;
-          }
-          break; // other 4xx: try the next model
-        } finally {
-          clearTimeout(timer);
-        }
+    try {
+      const { r, model } = await hedged(list, key, opts, m);
+      if (opts.usage) {
+        opts.usage.calls += 1;
+        opts.usage.inTokens += r.inTok;
+        opts.usage.outTokens += r.outTok;
+        opts.usage.usd = (opts.usage.inTokens * PRICE_IN + opts.usage.outTokens * PRICE_OUT) / 1e6;
       }
+      mode = m;
+      workingModel = model;
+      return { text: r.text, sources: r.sources, model };
+    } catch (e) {
+      lastErr = e instanceof GeminiError ? e : new GeminiError(String(e));
+      if (lastErr.status === 401 || lastErr.status === 403) throw lastErr;
+      if (opts.search && /quota|exceeded/i.test(lastErr.message)) throw lastErr;
     }
   }
   throw lastErr ?? new GeminiError("Gemini call failed");
