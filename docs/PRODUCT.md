@@ -1,24 +1,36 @@
-# Product and design brief
+# Product and design brief: "Prospect Quest"
 
-**Direction: Japanese minimal.** Paper white, sumi ink, one vermilion (shu) accent, thin rules, lots of space and quiet motion. Light by default, because she reads it at a desk in daylight. Dark mode is available.
+**Direction: Midnight quest.** Deep indigo night (the colour of trust and security, which is what Sprinto sells) on warm paper. Mango, coral, mint and lilac are the game colours. It's in the same craft family as our AI Ops hackathon build (Franchise Radar): chunky rounded cards, a quest header, pastel level tiles, and stamps. It has its own identity and is gentler on the eyes for long review sessions.
 
-| Token | Use | Contrast on paper |
+## Why gamify an outreach tool
+The Growth Lead's real job after this build is *reviewing*. Reviewing 15 companies is tiring; that fatigue is the problem the case starts with. The game layer makes the review fast and legible:
+
+| Element | What it shows at a glance |
+|---|---|
+| **Score ring** (every prospect) | Proven points as a coloured arc, unknown points as a pale lilac arc, and the 60 qualify line as a coral tick |
+| **7-node journey** | Which of the 7 steps each company reached and where it stopped (green done, mango running, coral failed, dashed skipped) |
+| **Stamps** | SENT · HELD · CUSTOMER · RIVAL · NURTURE · CHECK: the outcome in one word |
+| **Quest header** | Level (by emails sent), an XP bar of research minutes saved against 17.5 min by hand, and a % time-saved ring |
+| **8 badges** | Fact checker, Detective (the loop flipped a verdict), Gatekeeper, Sharpshooter (8/10+), Inbox hit, No bluffing (held an unsupported claim), Speedrun, Good citizen (respected robots.txt) |
+| **Level tiles** | The 7 steps as coloured cards, so a first-time viewer understands the system in 10 seconds |
+| **Confetti** | Only when an email actually lands, and switched off under reduced-motion settings |
+
+## Tokens
+| Token | Hex | Use |
 |---|---|---|
-| Ink `#1b1b1a` | Text, proven-points bars | 17:1 |
-| Ink-2 `#4a4a47` | Body copy | 8.6:1 |
-| Ink-3 `#6b6b66` | Secondary text | 5.3:1 |
-| Shu `#c23a1c` | The one accent: the 60 line, focus ring, held | 5.2:1 |
-| Matcha `#3f6b45` | Passed, sent | 6.0:1 |
-| Ai (indigo) `#2e4a6b` | Unknown range band, evidence IDs | 8.4:1 |
-| Kin (gold) `#8a6a1f` | Flags, held, insufficient data | 5.0:1 |
+| Night | `#17153b` | Header, hero, quest band, drawer head |
+| Paper / card | `#faf6ee` / `#fffdf8` | Page and cards |
+| Ink / ink-2 / ink-3 | `#1d1b33` / `#48455f` / `#6b6782` | Text (AA on paper) |
+| Mango | `#f6b545` | Primary action, active nav, XP |
+| Coral | `#ee7656` | The 60 line, failures |
+| Mint · lilac · sky · rose | pastel tiles | Steps, blocks, columns |
+| Status pairs | go, info, wait, warn, hold, stop | Pills; text at 4.5:1 or better on their background |
 
-**Type:** Hiragino Mincho / Yu Mincho for display and big numbers, Hiragino Sans / system sans for text, and monospace for numerals. All are system fonts, so nothing loads from outside (CSP `default-src 'self'`).
+**Type:** Bricolage Grotesque (display), Instrument Serif italic (accents), Inter (text) and JetBrains Mono (numbers and labels). Fonts are self-hosted by `next/font`, so the CSP stays `default-src 'self'`.
 
-**Rules we kept**
-- One idea per section on Home; each number says what it is compared with.
-- Charts are drawn to scale: the time bars and score ranges on 0–100, with the 60 line drawn in.
-- There is no purple gradient or neon, no emoji icons, no eyebrow labels on every heading, and no grid of identical cards.
-- Motion: sections fade up once and the running step breathes. All of it switches off under `prefers-reduced-motion`.
-- At 390px there is no sideways scroll: tables scroll inside their own frame and the 7-step grid becomes 2 columns.
-- Scraped text is only ever rendered as React text nodes; `dangerouslySetInnerHTML` is never used.
-- Hovering or focusing an account highlights it in every view.
+## Rules kept
+- Every number says what it is and what it's compared with. Bars, rings and ranges are drawn to scale on 0–100.
+- No sideways scroll on a phone: the drawer and walls reflow, and tables scroll inside their own frame.
+- Visible keyboard focus (a mango ring), a focus trap in the drawer, and Esc to close.
+- Scraped text is rendered only as React text, never as HTML.
+- Hovering or focusing a prospect highlights it on every page.

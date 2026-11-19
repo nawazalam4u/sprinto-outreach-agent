@@ -6,16 +6,15 @@ MESA C4 · Term 2 · Case 02 ("Cold Outreach, at Scale").
 
 **Live app:** https://sprinto-outreach-agent-delta.vercel.app · **Code:** https://github.com/nawazalam4u/sprinto-outreach-agent
 
-### Results from live runs (Nov 2026)
+### Results from the final live run (19 Nov 2026, 14 real domains)
 | | |
 |---|---|
-| Companies researched | 14 real domains |
-| Time per company | 37 s average (89 s when an email is written), vs 15–20 min by hand |
-| Cost per company | about $0.005 average, about $0.013 when an email is written |
+| Time per company | about 1 min on average (62 s); about 3 min when an email is written; vs 15–20 min by hand |
+| Cost per company | about $0.006, or $0.016 when an email is written |
 | Verdicts changed by the agent loop | 7 of 14 (the homepage alone said "insufficient data") |
-| Emails | sent to own inbox for Reflex and Airmeet (reviewer 8.3/10); Rime held because the fact-check found an unsupported claim |
-| Correctly excluded | plane.so and rocketlane.com (trust centre already on Sprinto), vanta.com (rival vendor), zomato.com (not B2B), spendflo and spotdraft (already hold SOC 2 + ISO 27001) |
-| Handled gracefully | hevodata.com (robots.txt says no bots), sprinto.com (403 blocked) |
+| Emails sent to own inbox | Reflex (8.3/10), Airmeet (8.0/10), Rime (8.7/10): all 16 rules plus a fact-checking reviewer |
+| Correctly kept out | plane.so and rocketlane.com (trust centre on Sprinto: existing customers), vanta.com (rival vendor), zomato.com (not B2B), spendflo, spotdraft, journify, mondrio (nurture: already certified or too thin) |
+| Handled gracefully | hevodata.com (robots.txt), sprinto.com (403), hoppscotch.io (evidence too thin: sent to a human) |
 
 - **Brief (Nine Checks, Five Decisions, Components Map):** `/brief` in the app, plus [`docs/nine-checks.png`](docs/nine-checks.png) and [`docs/components-map.png`](docs/components-map.png)
 - **PRD:** [`docs/PRD.md`](docs/PRD.md) · **Decisions:** [`docs/DECISIONS.md`](docs/DECISIONS.md) · **Design brief:** [`docs/PRODUCT.md`](docs/PRODUCT.md)
@@ -67,6 +66,10 @@ Terminal run (writes `out/<domain>.json`):
 ```bash
 npx vite-node scripts/live.ts acme.com example.io
 ```
+
+## Design
+
+"Prospect Quest": a gamified, Midnight-quest design (score rings, a 7-node journey, stamps, badges, an XP bar). See [`docs/PRODUCT.md`](docs/PRODUCT.md).
 
 ## Tests
 

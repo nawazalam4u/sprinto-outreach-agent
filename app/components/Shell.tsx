@@ -4,41 +4,40 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Drawer from "./Drawer";
+import { IBook, ICols, IGrid, IHome, IPlay, ITarget } from "./Icons";
 import { StoreProvider, useStore } from "./store";
 
 const NAV = [
-  ["/", "Home"],
-  ["/run", "Run"],
-  ["/accounts", "Accounts"],
-  ["/pipeline", "Pipeline"],
-  ["/icp", "ICP"],
-  ["/brief", "Brief"],
+  ["/", "Home", IHome],
+  ["/run", "Run", IPlay],
+  ["/accounts", "Prospects", IGrid],
+  ["/pipeline", "Pipeline", ICols],
+  ["/icp", "ICP", ITarget],
+  ["/brief", "Brief", IBook],
 ] as const;
 
-function Theme() {
-  const [t, setT] = useState<"light" | "dark" | null>(null);
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem("theme") as "light" | "dark" | null;
-      if (v) {
-        document.documentElement.dataset.theme = v;
-        setT(v);
-      }
-    } catch {}
-  }, []);
-  const toggle = () => {
-    const dark = t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-    const next = dark ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    setT(next);
-    try {
-      localStorage.setItem("theme", next);
-    } catch {}
-  };
+export function Logo() {
   return (
-    <button className="theme-btn" onClick={toggle} aria-label="Switch light or dark theme">
-      ◐
-    </button>
+    <svg viewBox="0 0 40 40" aria-hidden="true">
+      <rect width="40" height="40" rx="12" fill="#f6b545" />
+      <path d="M20 8l10 4v7c0 6.5-4.3 10.5-10 12-5.7-1.5-10-5.5-10-12v-7z" fill="#17153b" />
+      <path d="M15 20l3.5 3.5L26 16" stroke="#f6b545" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function Health() {
+  const [h, setH] = useState<{ gemini: boolean; hunter: boolean; email: boolean } | null>(null);
+  useEffect(() => {
+    fetch("/api/health").then((r) => r.json()).then(setH).catch(() => {});
+  }, []);
+  if (!h) return null;
+  return (
+    <div className="health" aria-label="Connected services">
+      <span><i className={`dot ${h.gemini ? "on" : ""}`} />AI</span>
+      <span><i className={`dot ${h.hunter ? "on" : ""}`} />Hunter</span>
+      <span><i className={`dot ${h.email ? "on" : ""}`} />Email</span>
+    </div>
   );
 }
 
@@ -46,10 +45,8 @@ function SampleBanner() {
   const { isSample } = useStore();
   if (!isSample) return null;
   return (
-    <div style={{ background: "var(--paper-2)", borderBottom: "1px solid var(--rule)" }}>
-      <div className="wrap small" style={{ padding: "8px 24px" }}>
-        Showing an example run so the pages are not empty. <Link href="/run">Run your own domains</Link>: your first run replaces it.
-      </div>
+    <div className="notice-bar">
+      You are looking at a real example run (emails masked). <Link href="/run">Run your own domains</Link>; your first run replaces it.
     </div>
   );
 }
@@ -58,32 +55,34 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   return (
     <StoreProvider>
-      <a href="#main" className="sr">
-        Skip to content
-      </a>
+      <a href="#main" className="sr">Skip to content</a>
       <header className="top">
-        <div className="wrap">
-          <Link href="/" className="mark" aria-label="Sprinto Outreach Agent, home">
-            <i aria-hidden />
-            <span>Sprinto Outreach</span>
+        <div className="bar">
+          <Link href="/" className="brand" aria-label="Sprinto Outreach, home">
+            <Logo />
+            <b>Prospect Quest</b>
+            <small>Sprinto outreach agent</small>
           </Link>
           <nav className="nav" aria-label="Main">
-            {NAV.map(([href, label]) => (
+            {NAV.map(([href, label, Icon]) => (
               <Link key={href} href={href} aria-current={path === href ? "page" : undefined}>
+                <Icon />
                 {label}
               </Link>
             ))}
           </nav>
-          <Theme />
+          <Health />
         </div>
       </header>
-      <SampleBanner />
-      <main id="main">
-        <div className="wrap">{children}</div>
-      </main>
+      <div className="sheet">
+        <SampleBanner />
+        <main id="main">
+          <div className="wrap">{children}</div>
+        </main>
+      </div>
       <footer className="foot">
         <div className="wrap">
-          <span>Sprinto Outreach Agent · MESA C4 Term 2 · Case 02</span>
+          <span>Prospect Quest · Sprinto cold-outreach agent · MESA C4 Term 2 · Case 02</span>
           <span>Every email goes to the builder&apos;s own inbox only. Prospects are never contacted.</span>
         </div>
       </footer>

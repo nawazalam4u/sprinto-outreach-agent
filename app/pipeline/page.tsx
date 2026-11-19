@@ -1,26 +1,30 @@
 "use client";
 
 import { useLink, useStore } from "../components/store";
-import { Score } from "../components/ui";
+import { ScoreRing, stampFor } from "../components/ui";
 import type { CompanyResult, Status } from "@/lib/types";
 
-const COLS: { key: Status[]; name: string; note: string }[] = [
-  { key: ["sent"], name: "Sent", note: "In your inbox" },
-  { key: ["drafted"], name: "Drafted", note: "Passed, not sent yet" },
-  { key: ["held"], name: "Held", note: "No draft passed the checks" },
-  { key: ["no_contact"], name: "No contact", note: "Nobody named found" },
-  { key: ["insufficient_data", "failed"], name: "Needs a look", note: "Unclear or unreadable" },
-  { key: ["not_qualified"], name: "Not qualified", note: "Disqualified or below 60" },
+const COLS: { key: Status[]; name: string; note: string; bg: string }[] = [
+  { key: ["sent"], name: "Sent", note: "In your inbox", bg: "#c9ecd9" },
+  { key: ["drafted"], name: "Drafted", note: "Passed, not sent yet", bg: "#cfe5f9" },
+  { key: ["held"], name: "Held", note: "A draft failed a check", bg: "#fbd0c2" },
+  { key: ["no_contact"], name: "No contact", note: "Nobody named found", bg: "#fbe8bf" },
+  { key: ["insufficient_data", "failed"], name: "Needs a look", note: "Unclear or unreadable", bg: "#d8cff8" },
+  { key: ["not_qualified"], name: "Kept out", note: "Wrong fit, rival, customer", bg: "#ece7dc" },
 ];
 
-function Card({ r }: { r: CompanyResult }) {
+function Mini({ r }: { r: CompanyResult }) {
   const { onClick, onKeyDown, className, onMouseEnter, onMouseLeave, onFocus, onBlur } = useLink(r.domain);
+  const st = stampFor(r);
   return (
-    <button className={`card ${className}`} {...{ onClick, onKeyDown, onMouseEnter, onMouseLeave, onFocus, onBlur }}>
-      <div className="t">{r.state.company_name ?? r.domain}</div>
-      <div className="s">
-        <Score r={r} /> · {r.poc ? r.poc.title : r.reasons[0]?.slice(0, 60)}
-      </div>
+    <button className={`mini ${className}`} {...{ onClick, onKeyDown, onMouseEnter, onMouseLeave, onFocus, onBlur }}>
+      <span className="row" style={{ gap: 10, flexWrap: "nowrap" }}>
+        <ScoreRing low={r.state.score_low} high={r.state.score_high} size={38} />
+        <span style={{ minWidth: 0 }}>
+          <b>{r.state.company_name ?? r.domain}</b>
+          <span>{r.poc ? `${r.poc.name} · ${r.poc.title}` : st?.text.toLowerCase() ?? r.domain}</span>
+        </span>
+      </span>
     </button>
   );
 }
@@ -29,19 +33,23 @@ export default function Pipeline() {
   const { list } = useStore();
   return (
     <div>
-      <h1 className="display" style={{ fontSize: "clamp(30px,4.4vw,46px)" }}>Pipeline</h1>
-      <p className="lede">Where each account stopped, and why. Hover one here and it lights up everywhere.</p>
-      <div className="board" style={{ marginTop: 40 }}>
+      <div className="sec-title">
+        <h1 style={{ fontSize: "clamp(30px,4.4vw,44px)" }}>
+          The <em className="s" style={{ color: "var(--night-3)" }}>pipeline</em>
+        </h1>
+        <span className="sub">Where each prospect stopped, and why. Hover one and it lights up on every page.</span>
+      </div>
+      <div className="board">
         {COLS.map((c) => {
           const items = list.filter((r) => c.key.includes(r.state.status));
           return (
-            <section key={c.name} className="col" aria-label={c.name}>
+            <section key={c.name} className="col" style={{ background: c.bg }} aria-label={c.name}>
               <h3>
                 <span>{c.name}</span>
-                <span className="num muted">{items.length}</span>
+                <span className="n">{items.length}</span>
               </h3>
-              <p className="small muted" style={{ margin: "6px 0 4px" }}>{c.note}</p>
-              {items.map((r) => <Card key={r.domain} r={r} />)}
+              <p className="note">{c.note}</p>
+              {items.map((r) => <Mini key={r.domain} r={r} />)}
             </section>
           );
         })}

@@ -161,6 +161,7 @@ export async function writeEmail(
   style: StyleExample[],
   senderName: string,
   emit: (m: string) => void = () => {},
+  deadline = Infinity, // stop redrafting past this time (Vercel function limit)
 ): Promise<Draft> {
   const company = state.company_name ?? state.domain;
   const styleBlock = style.length
@@ -209,6 +210,10 @@ Return JSON: {"subject":"...","body":"...","hook":"the hook phrase","hook_fact_i
   const attempts: DraftAttempt[] = [];
   let prompt = base;
   for (let n = 1; n <= MAX_DRAFTS; n++) {
+    if (n > 1 && Date.now() > deadline) {
+      emit("Time limit reached: keeping the best draft so far (held unless it passed)");
+      break;
+    }
     const { data } = await geminiJson<Gen>({
       usage,
       temperature: 0.5 + n * 0.1,

@@ -168,7 +168,7 @@ export async function runPipeline(input: RunInput, emit: (e: RunEvent) => void):
 
     // ---------- 6. Draft, validate in code, AI review, rewrite (max 4)
     step(6, "running");
-    const draft = await writeEmail(state, poc, result.painPoints, ctx.facts, usage, input.style ?? [], senderName(), log(6));
+    const draft = await writeEmail(state, poc, result.painPoints, ctx.facts, usage, input.style ?? [], senderName(), log(6), t0 + 240_000);
     result.draft = draft;
     const last = draft.attempts[draft.attempts.length - 1];
     step(

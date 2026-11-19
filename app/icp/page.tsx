@@ -1,83 +1,97 @@
 import type { Metadata } from "next";
 import { BLOCKS, CAPS, COMPETITOR_TOOLS, EVIDENCE_MAP, GATES, ICP_SUMMARY, ICP_VERSION, LOOP_LIMITS, ROLE_PRIORITY, SIGNALS, VERDICT_LINES } from "@/lib/icp";
 
-export const metadata: Metadata = { title: "ICP · Sprinto Outreach Agent" };
+export const metadata: Metadata = { title: "ICP · Prospect Quest" };
+
+const BLOCK_BG: Record<string, string> = { firmographic: "#cfe5f9", upmarket: "#d8cff8", trigger: "#fbd0c2", fit: "#c9ecd9" };
 
 export default function Icp() {
   return (
     <div>
-      <h1 className="display" style={{ fontSize: "clamp(30px,4.4vw,46px)" }}>Who is a <em>right company</em>?</h1>
-      <p className="lede">{ICP_SUMMARY.oneLine}</p>
-      <p className="small muted">ICP {ICP_VERSION} · every rule below is in one file the Growth Lead owns.</p>
-
-      <section style={{ marginTop: 56 }}>
-        <h2 className="sec">Why this definition</h2>
-        <ol style={{ paddingLeft: 20, color: "var(--ink-2)", maxWidth: 760 }}>
-          {ICP_SUMMARY.why.map((w) => <li key={w} style={{ marginTop: 8 }}>{w}</li>)}
-        </ol>
+      <section className="hero" style={{ paddingBottom: 30 }}>
+        <span className="eyebrow">ICP {ICP_VERSION} · one file she owns</span>
+        <h1 style={{ fontSize: "clamp(32px,4.6vw,52px)" }}>Who is a <em>right company?</em></h1>
+        <p className="lead">{ICP_SUMMARY.oneLine}</p>
       </section>
 
-      <section style={{ marginTop: 56 }}>
-        <h2 className="sec">Hard gates</h2>
-        <p className="muted">Any fail ends the assessment. Rival tools checked: {COMPETITOR_TOOLS.join(", ")}.</p>
-        <div className="table-wrap" style={{ marginTop: 16 }}>
-          <table>
-            <thead><tr><th>Gate</th><th>Passes when</th><th>Fails when</th></tr></thead>
-            <tbody>{GATES.map((g) => <tr key={g.key} style={{ cursor: "default" }}><td>{g.name}</td><td className="small">{g.rule}</td><td className="small muted">{g.fail}</td></tr>)}</tbody>
-          </table>
+      <section className="sec">
+        <div className="sec-title"><h2>Why this <em>definition</em></h2></div>
+        <div className="grid g2">
+          {ICP_SUMMARY.why.map((w, i) => (
+            <div key={w} className="card" style={{ display: "flex", gap: 12 }}>
+              <span className="num" style={{ fontWeight: 800, color: "var(--coral)" }}>{String(i + 1).padStart(2, "0")}</span>
+              <span style={{ color: "var(--ink-2)" }}>{w}</span>
+            </div>
+          ))}
         </div>
       </section>
 
-      <section style={{ marginTop: 56 }}>
-        <h2 className="sec">The 100-point rubric</h2>
-        <p className="muted" style={{ maxWidth: 760 }}>
-          Points need evidence. A signal the website cannot settle is marked external: silence there means unknown, not no. Unknowns widen the range. Priority from {VERDICT_LINES.priority}, Qualify from {VERDICT_LINES.qualify}, Nurture from {VERDICT_LINES.nurture}. With no upmarket pull the cap is {CAPS.noUpmarket}; already holding SOC 2 and ISO 27001 caps it at {CAPS.fullyCertified}.
-        </p>
-        {BLOCKS.map((b) => (
-          <div key={b.key} style={{ marginTop: 24 }}>
-            <div className="label">{b.name.toUpperCase()} · {b.max}</div>
-            <div className="table-wrap" style={{ borderTopWidth: 1 }}>
-              <table><tbody>
-                {SIGNALS.filter((s) => s.block === b.key).map((s) => (
-                  <tr key={s.key} style={{ cursor: "default" }}>
-                    <td>{s.name}</td>
-                    <td className="small muted">{s.external ? "external" : "website"}</td>
-                    <td className="r num" style={{ width: 70 }}>{s.max}</td>
-                  </tr>
-                ))}
-              </tbody></table>
+      <section className="sec">
+        <div className="sec-title">
+          <h2>Three <em>hard gates</em></h2>
+          <span className="sub">Any fail ends the assessment at once. Rival tools checked: {COMPETITOR_TOOLS.join(", ")}.</span>
+        </div>
+        <div className="grid g3">
+          {GATES.map((g) => (
+            <div key={g.key} className="card">
+              <h3 style={{ fontSize: 17 }}>{g.name}</h3>
+              <p className="small" style={{ margin: "8px 0 4px" }}><span className="pill t-go">Pass</span> {g.rule}</p>
+              <p className="small" style={{ margin: 0 }}><span className="pill t-stop">Fail</span> {g.fail}</p>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
 
-      <section style={{ marginTop: 56 }}>
-        <h2 className="sec">Evidence map</h2>
-        <p className="muted">The agent loop runs while 60 sits inside the score range. Budget: {LOOP_LIMITS.maxToolCalls} tool calls, at most {LOOP_LIMITS.maxSearches} web searches, {LOOP_LIMITS.maxMs / 1000} seconds, no repeats.</p>
-        <div className="table-wrap" style={{ marginTop: 16 }}>
-          <table>
-            <thead><tr><th>Question</th><th>Fact that settles it</th><th>Where it lives</th><th>Enough when</th><th className="r">Tries</th><th>If unanswered</th></tr></thead>
+      <section className="sec">
+        <div className="sec-title">
+          <h2>The 100-point <em>rubric</em></h2>
+          <span className="sub">
+            Points need evidence. "External" signals are rarely on a website, so silence there means unknown, which widens the range. Priority from {VERDICT_LINES.priority}, Qualify from {VERDICT_LINES.qualify}, Nurture from {VERDICT_LINES.nurture}. No upmarket pull caps it at {CAPS.noUpmarket}; holding SOC 2 and ISO 27001 caps it at {CAPS.fullyCertified}.
+          </span>
+        </div>
+        <div className="grid g4" style={{ alignItems: "start" }}>
+          {BLOCKS.map((b) => (
+            <div key={b.key} style={{ background: BLOCK_BG[b.key], borderRadius: 20, padding: 14 }}>
+              <div className="row between"><h3 style={{ fontSize: 16 }}>{b.name}</h3><span className="num" style={{ fontWeight: 800 }}>{b.max}</span></div>
+              <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
+                {SIGNALS.filter((s) => s.block === b.key).map((s) => (
+                  <div key={s.key} className="row between" style={{ background: "var(--card)", borderRadius: 12, padding: "7px 10px", flexWrap: "nowrap" }}>
+                    <span className="small">{s.name}{s.external && <span className="muted"> · ext</span>}</span>
+                    <span className="num small" style={{ fontWeight: 800 }}>{s.max}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="sec">
+        <div className="sec-title">
+          <h2>The evidence <em>map</em></h2>
+          <span className="sub">The agent loop runs while 60 sits inside the score range. Budget: {LOOP_LIMITS.maxToolCalls} tool calls, at most {LOOP_LIMITS.maxSearches} searches, {LOOP_LIMITS.maxMs / 1000} seconds, no repeats.</span>
+        </div>
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead><tr><th>Question</th><th>Fact that settles it</th><th className="hide-m">Where it lives</th><th>Enough when</th><th className="hide-m">If unanswered</th></tr></thead>
             <tbody>{EVIDENCE_MAP.map((e) => (
-              <tr key={e.field} style={{ cursor: "default" }}>
-                <td>{e.question}</td><td className="small">{e.fact}</td><td className="small">{e.where}</td><td className="small">{e.sufficient}</td><td className="r num">{e.limit}</td><td className="small muted">{e.ifUnanswered}</td>
-              </tr>
+              <tr key={e.field}><td><b>{e.question}</b></td><td className="small">{e.fact}</td><td className="small hide-m">{e.where}</td><td className="small">{e.sufficient}</td><td className="small muted hide-m">{e.ifUnanswered}</td></tr>
             ))}</tbody>
           </table>
         </div>
       </section>
 
-      <section style={{ marginTop: 56 }}>
-        <h2 className="sec">Who gets the email</h2>
-        <div className="grid-3" style={{ marginTop: 20 }}>
-          {ROLE_PRIORITY.map((r) => (
-            <div key={r.band} style={{ borderTop: "1px solid var(--ink)", paddingTop: 12 }}>
-              <div className="label">{r.band.toUpperCase()}</div>
-              <p style={{ margin: "6px 0" }}>{r.roles.join(" → ")}</p>
-              <p className="small muted" style={{ margin: 0 }}>{r.why}</p>
+      <section className="sec">
+        <div className="sec-title"><h2>Who gets the <em>email</em></h2><span className="sub">Unknown size uses the 51–200 rules. Sales, marketing and HR are never picked. Nobody is invented, no address is guessed.</span></div>
+        <div className="grid g3">
+          {ROLE_PRIORITY.map((r, i) => (
+            <div key={r.band} className={`lvl c${i + 1}`} style={{ minHeight: 0 }}>
+              <div className="k">{r.band.toUpperCase()}</div>
+              <b>{r.roles.join(" → ")}</b>
+              <p>{r.why}</p>
             </div>
           ))}
         </div>
-        <p className="small muted" style={{ marginTop: 16 }}>Unknown size uses the 51–200 rules. Sales, marketing and HR titles are never picked. No person is ever invented, and no email address is guessed.</p>
       </section>
     </div>
   );

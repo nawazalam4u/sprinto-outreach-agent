@@ -45,7 +45,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // Pacing: free-tier keys allow only a few requests a minute. Space calls out.
 let nextSlot = 0;
 async function pace() {
-  const gap = Number(process.env.GEMINI_MIN_INTERVAL_MS ?? 1200);
+  const gap = Number(process.env.GEMINI_MIN_INTERVAL_MS ?? 400);
   const now = Date.now();
   const wait = Math.max(0, nextSlot - now);
   nextSlot = Math.max(now, nextSlot) + gap;

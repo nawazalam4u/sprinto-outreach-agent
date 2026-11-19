@@ -395,6 +395,31 @@ async function newsSearch(ctx: LoopCtx): Promise<string> {
   }
   ctx.pages.push({ url: `news: ${name}`, kind: "search", ok: items.length > 0, outcome: items.length ? "OK" : "EMPTY_SHELL", via: "search", words: items.length, text: "" });
   if (!items.length) return "no news headlines found (stays unknown)";
+
+  // Deterministic first: a funding headline that names the company gives the stage and date in code.
+  const nameKey = name.toLowerCase().replace(/\b(inc|corp|ltd|labs?|ai|hq)\b\.?/g, "").trim().slice(0, 12);
+  const funding = items
+    .filter((it) => it.title.toLowerCase().includes(nameKey) && /\b(raises?|raised|secures?|closes?|funding|series [a-e]|seed round|pre-seed)\b/i.test(it.title))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  let n = 0;
+  if (funding.length) {
+    const it = funding[0];
+    const stage = it.title.match(/series\s+([a-e])\b/i)?.[1] ? `Series ${it.title.match(/series\s+([a-e])\b/i)![1].toUpperCase()}` : /pre-seed/i.test(it.title) ? "Pre-seed" : /seed/i.test(it.title) ? "Seed" : null;
+    const quote = `${it.title} (${it.date})`;
+    ctx.facts.push({ id: nextFactId(), field: "funding_date", value: it.date, quote, url: it.link, verified: true, via: "news" });
+    n++;
+    // no stage word: estimate from the amount in the headline, labelled as an estimate
+    const amt = it.title.match(/\$\s?(\d+(?:\.\d+)?)\s?(m|mn|million|b|bn|billion)\b/i);
+    const usdM = amt ? Number(amt[1]) * (/^b/i.test(amt[2]) ? 1000 : 1) : null;
+    const est = !stage && usdM ? `${usdM < 5 ? "Seed" : usdM < 30 ? "Series A" : usdM < 100 ? "Series B" : usdM < 300 ? "Series C" : "Series D+"} (estimate from $${usdM}M round)` : null;
+    if (stage || est) {
+      ctx.facts.push({ id: nextFactId(), field: "funding_stage", value: (stage ?? est)!, quote, url: it.link, verified: true, via: "news" });
+      n++;
+      ctx.state.search_ok = true;
+      return `${n} facts from the latest funding headline (read in code) of ${items.length}`;
+    }
+  }
+
   const list = items.map((it, i) => `H${i + 1} [${it.date}] ${it.title}`).join("\n");
   const { data } = await geminiJson<{ facts?: { field: string; value: string; headline: string }[] }>({
     usage: ctx.usage,
@@ -403,7 +428,6 @@ Give the headline id for each fact. If no headline is clearly about this company
 ${list}
 Return JSON: {"facts":[{"field":"...","value":"...","headline":"H3"}]}`,
   });
-  let n = 0;
   for (const f of data.facts ?? []) {
     const idx = Number(String(f.headline ?? "").replace(/\D/g, "")) - 1;
     const it = items[idx];
