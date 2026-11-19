@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Components Map</title>
+<style>
+  :root { --ink:#1b1b1a; --ink2:#4a4a47; --ink3:#6b6b66; --rule:#dcdad3; --shu:#c23a1c; --ai:#2e4a6b; --matcha:#3f6b45; --kin:#8a6a1f; }
+  * { box-sizing: border-box; }
+  body { margin:0; width:1600px; background:#fbfbf9; font-family:"Hiragino Sans","Helvetica Neue",Arial,sans-serif; color:var(--ink); }
+  .title { padding:28px 40px 10px; }
+  .title h1 { margin:0; font-family:"Hiragino Mincho ProN","Yu Mincho",Georgia,serif; font-weight:500; font-size:34px; }
+  .title h1 b { color:var(--shu); font-weight:500; }
+  .title p { margin:6px 0 0; color:var(--ink3); font-size:15px; }
+  .stage { position:relative; width:1600px; height:1190px; }
+  .hdr { position:absolute; top:0; height:44px; display:flex; align-items:center; justify-content:center; font-size:15px; letter-spacing:.08em; color:#fff; background:var(--ink); }
+  .lane { position:absolute; left:0; width:1600px; border-top:1px solid var(--rule); }
+  .actor { position:absolute; left:0; width:160px; display:flex; flex-direction:column; justify-content:center; padding:0 16px; background:var(--ink); color:#fff; font-size:16px; font-weight:600; }
+  .actor small { font-weight:400; font-size:12px; color:#cfcdc6; margin-top:4px; }
+  .col-rule { position:absolute; top:44px; bottom:0; width:1px; background:var(--rule); }
+  .box { position:absolute; background:#fff; border:1.5px solid var(--ink); border-radius:3px; padding:10px 12px; font-size:12.5px; line-height:1.45; color:var(--ink2); }
+  .box h4 { margin:0 0 4px; font-size:14px; color:var(--ink); font-weight:600; }
+  .box .tag { position:absolute; top:-10px; right:8px; background:var(--ink); color:#fff; font-size:10.5px; padding:1px 7px; border-radius:2px; letter-spacing:.03em; }
+  .box.ai { border-color:var(--ai); } .box.ai .tag { background:var(--ai); }
+  .box.code { border-color:var(--ink); }
+  .box.mem { border-color:var(--kin); background:#fdfaf2; } .box.mem .tag { background:var(--kin); }
+  .box.ext { border-style:dashed; }
+  .box.human { border-color:var(--matcha); background:#f6faf5; } .box.human .tag { background:var(--matcha); }
+  .box.stop { border-color:var(--shu); background:#fdf3f0; } .box.stop .tag { background:var(--shu); }
+  .num { display:inline-block; width:20px; height:20px; border-radius:50%; background:var(--shu); color:#fff; font-size:12px; text-align:center; line-height:20px; margin-right:6px; font-weight:600; }
+  svg { position:absolute; inset:0; pointer-events:none; }
+  .lbl { font-size:11.5px; fill:var(--ink3); }
+  .legend { padding:0 40px 30px; display:grid; grid-template-columns: 1fr 1fr; gap:10px 40px; font-size:13.5px; color:var(--ink2); }
+  .legend b { color:var(--ink); }
+  .key { display:inline-block; width:34px; border-top:2.5px dashed; vertical-align:middle; margin-right:8px; }
+  .stack { margin:0 40px 36px; border-top:1px solid var(--ink); padding-top:14px; display:flex; flex-wrap:wrap; gap:10px 26px; font-size:13px; color:var(--ink2); }
+  .stack b { background:var(--ink); color:#fff; font-weight:500; padding:1px 8px; border-radius:2px; margin-right:6px; }
+</style></head>
+<body>
+<div class="title">
+  <h1>Sprinto · Cold Outreach Agent — <b>Components Map</b></h1>
+  <p>Domains in, cited emails out. Gemini reads and writes; code checks every quote, applies the rubric and the 16 email rules. Every email goes to my own inbox only.</p>
+</div>
+<div class="stage">
+  <!-- column headers -->
+  <div class="hdr" style="left:0;width:160px">Actor</div>
+  <div class="hdr" style="left:160px;width:210px">Trigger</div>
+  <div class="hdr" style="left:370px;width:270px">Input</div>
+  <div class="hdr" style="left:640px;width:260px">Context</div>
+  <div class="hdr" style="left:900px;width:280px">Processing</div>
+  <div class="hdr" style="left:1180px;width:220px">AI</div>
+  <div class="hdr" style="left:1400px;width:200px">Output</div>
+  <div class="col-rule" style="left:370px"></div><div class="col-rule" style="left:640px"></div><div class="col-rule" style="left:900px"></div><div class="col-rule" style="left:1180px"></div><div class="col-rule" style="left:1400px"></div>
+
+  <!-- lanes -->
+  <div class="lane" style="top:44px;height:180px;background:#f4f3ef"></div>
+  <div class="actor" style="top:44px;height:180px">Growth Lead<small>sets the rules</small></div>
+  <div class="lane" style="top:224px;height:200px"></div>
+  <div class="actor" style="top:224px;height:200px">System<small>Next.js API on Vercel</small></div>
+  <div class="lane" style="top:424px;height:180px;background:#f4f3ef"></div>
+  <div class="actor" style="top:424px;height:180px">Outside data<small>public sources, APIs</small></div>
+  <div class="lane" style="top:604px;height:200px"></div>
+  <div class="actor" style="top:604px;height:200px;background:var(--ai)">AI<small>Gemini Flash</small></div>
+  <div class="lane" style="top:804px;height:190px;background:#faf6ea"></div>
+  <div class="actor" style="top:804px;height:190px;background:var(--kin)">Memory<small>evidence + learned edits</small></div>
+  <div class="lane" style="top:994px;height:196px;background:#f2f7f1"></div>
+  <div class="actor" style="top:994px;height:196px;background:var(--matcha)">Growth Lead<small>reviews, decides</small></div>
+
+  <!-- Lane 1: Growth Lead rules -->
+  <div class="box human" style="left:175px;top:62px;width:180px;height:146px"><span class="tag">Run page</span><h4>Paste domains, press Run</h4>Up to 15 a run. Optional: a named person per domain (Option B)</div>
+  <div class="box code" style="left:655px;top:62px;width:230px;height:146px"><span class="tag">lib/icp.ts</span><h4>ICP rules she owns</h4>3 hard gates · 15 signals in 4 blocks (100 pts) · lines 75 / 60 / 40 · caps · role table by size · banned phrases</div>
+
+  <!-- Lane 2: System -->
+  <div class="box code" style="left:385px;top:248px;width:240px;height:152px"><span class="tag">fetch + cheerio</span><h4><span class="num">1</span>Scrape homepage</h4>robots.txt respected · strip nav, footer, cookies · ≤1,400 words · JS-only page → Jina Reader · typed outcome: OK / NOT_FOUND / BLOCKED / TIMEOUT / EMPTY_SHELL</div>
+  <div class="box code" style="left:915px;top:248px;width:250px;height:152px"><span class="tag">code</span><h4><span class="num">3</span>Gates + rubric</h4>Score as a range: proven points (low) to proven + unknown (high).<br>Range straddles 60 → agent loop.<br>PRIORITY · QUALIFY · NURTURE · REJECT · DISQUALIFIED · INSUFFICIENT</div>
+  <div class="box code" style="left:1415px;top:248px;width:172px;height:152px"><span class="tag">code</span><h4><span class="num">4</span>Pick the person</h4>≤50: founder → CTO<br>51–200 / unknown: security lead → CTO<br>200+: security/GRC<br>Never sales or HR</div>
+
+  <!-- Lane 3: outside data -->
+  <div class="box ext" style="left:385px;top:446px;width:240px;height:138px"><span class="tag">public</span><h4>Company website + job boards</h4>/pricing · /security · /trust · /customers · /about · /careers<br>Greenhouse / Lever / Ashby APIs (open roles, security hiring)</div>
+  <div class="box ext" style="left:655px;top:446px;width:230px;height:138px"><span class="tag">Gemini grounding</span><h4>Google Search</h4>Funding stage and date, headcount, certification news. Cited sources only. Max 2 per company</div>
+  <div class="box ext" style="left:1415px;top:446px;width:172px;height:138px"><span class="tag">Hunter.io</span><h4>Domain Search + Email Finder</h4>Named people + verified email. Cached. Emails are never guessed</div>
+
+  <!-- Lane 4: AI -->
+  <div class="box ai" style="left:385px;top:628px;width:240px;height:150px"><span class="tag">Gemini</span><h4><span class="num">2</span>Extract facts</h4>Each fact = field + value + exact quote + URL. Code keeps it only if the quote is really on the page → evidence E1, E2…</div>
+  <div class="box ai" style="left:655px;top:628px;width:230px;height:150px"><span class="tag">agent loop</span><h4>Planner picks ONE tool</h4>fetch_page · web_research · job_postings<br>Budget: 5 calls, 2 searches, 120 s, no repeats. Re-score after each</div>
+  <div class="box ai" style="left:915px;top:628px;width:250px;height:150px"><span class="tag">Gemini</span><h4><span class="num">5</span>Two pain points</h4>For this person's role, each citing evidence: the data they handle + who their buyer is</div>
+  <div class="box ai" style="left:1195px;top:628px;width:195px;height:150px"><span class="tag">Gemini</span><h4><span class="num">6</span>Write email</h4>Name + hook from one quoted fact + one proof line (whitelist) + one question. Up to 4 drafts</div>
+  <div class="box ai" style="left:1415px;top:628px;width:172px;height:150px"><span class="tag">Gemini</span><h4>AI reviewer</h4>Specificity, relevance, reply-likelihood 0–10. Below 7 → rewrite with its critique</div>
+
+  <!-- Lane 5: memory -->
+  <div class="box mem" style="left:655px;top:826px;width:230px;height:146px"><span class="tag">state object</span><h4>Evidence ledger + state</h4>Fixed schema: b2b, certification, stage, headcount, triggers, pages tried, tool calls, verdicts before/after the loop</div>
+  <div class="box mem" style="left:915px;top:826px;width:250px;height:146px"><span class="tag">code</span><h4>16 email rules</h4>≤110 words · one "?" · no "!" · first name · product word first · every number in evidence · no "your website" · "recent" only if funded ≤6 months</div>
+  <div class="box mem" style="left:1195px;top:826px;width:195px;height:146px"><span class="tag">learn</span><h4>Learned edits</h4>Her before/after edits (last 3) are shown to the writer on the next run</div>
+  <div class="box mem" style="left:1415px;top:826px;width:172px;height:146px"><span class="tag">browser</span><h4>Accounts store</h4>Every result, reason and review, kept in her browser</div>
+
+  <!-- Lane 6: human -->
+  <div class="box stop" style="left:655px;top:1016px;width:230px;height:150px"><span class="tag">kill switch</span><h4>Stop rules</h4>Any unbacked claim sent · &gt;50% heavy rewrites at day 30 · PoC accuracy &lt;60% · costs more time than it saves</div>
+  <div class="box stop" style="left:915px;top:1016px;width:250px;height:150px"><span class="tag">held</span><h4>No draft passed → HELD</h4>Nothing is sent. Shown in "Needs you" with the failed rules</div>
+  <div class="box human" style="left:1195px;top:1016px;width:195px;height:150px"><span class="tag">Resend</span><h4><span class="num">7</span>Email lands in MY inbox</h4>To: hard-coded. Footer names the intended person. She forwards to the prospect</div>
+  <div class="box human" style="left:1415px;top:1016px;width:172px;height:150px"><span class="tag">drawer</span><h4>Review</h4>Why this company / person / email. Edit, agree or not, log the reply</div>
+
+  <svg width="1600" height="1190" viewBox="0 0 1600 1190">
+    <defs>
+      <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1b1b1a"/></marker>
+      <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c23a1c"/></marker>
+      <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2e4a6b"/></marker>
+      <marker id="k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a6a1f"/></marker>
+    </defs>
+    <g stroke="#1b1b1a" stroke-width="1.6" fill="none" marker-end="url(#a)">
+      <!-- trigger -> scrape -->
+      <path d="M265 200 V 324 H 383"/>
+      <!-- scrape -> extract -->
+      <path d="M385 330 H 377 V 703 H 383"/>
+      <!-- extract -> rubric -->
+      <path d="M625 700 H 640 V 380 H 913"/>
+      <!-- icp -> rubric -->
+      <path d="M885 135 H 1040 V 246"/>
+      <!-- rubric -> person (Go) -->
+      <path d="M1165 324 H 1413"/>
+      <!-- hunter -> person -->
+      <path d="M1500 446 V 402"/>
+      <!-- person -> pains -->
+      <path d="M1500 400 V 414 H 1172 V 610 H 1040 V 626"/>
+      <!-- pains -> write -->
+      <path d="M1165 703 H 1193"/>
+      <!-- write -> reviewer -->
+      <path d="M1390 690 H 1413"/>
+      <!-- write -> rules -->
+      <path d="M1260 778 V 800 H 1110 V 824"/>
+      <!-- rules -> send -->
+      <path d="M1100 972 V 990 H 1260 V 1014"/>
+      <!-- rules -> held -->
+      <path d="M1000 972 V 1014"/>
+      <!-- send -> review -->
+      <path d="M1390 1090 H 1413"/>
+      <!-- extract -> ledger -->
+      <path d="M505 778 V 900 H 653"/>
+    </g>
+    <text class="lbl" x="275" y="315">domain list</text>
+    <text class="lbl" x="300" y="600">clean text</text>
+    <text class="lbl" x="660" y="372">verified facts</text>
+    <text class="lbl" x="895" y="128">rules to judge by</text>
+    <text class="lbl" x="1196" y="316">QUALIFY / PRIORITY</text>
+    <text class="lbl" x="1508" y="438">people</text>
+    <text class="lbl" x="1180" y="620">name + role</text>
+    <text class="lbl" x="1115" y="796">each draft</text>
+    <text class="lbl" x="1112" y="985">all 16 pass + 7/10</text>
+    <text class="lbl" x="925" y="996">none passed</text>
+    <!-- LOOP 1 agent loop: rubric <-> planner <-> sources -->
+    <g stroke="#2e4a6b" stroke-width="2" stroke-dasharray="7 5" fill="none" marker-end="url(#b)">
+      <path d="M960 400 V 560 H 900 V 702 H 887"/>
+      <path d="M770 628 V 586"/>
+      <path d="M620 584 V 600 H 760"/>
+      <path d="M885 520 H 940 V 402"/>
+    </g>
+    <text x="975" y="596" style="font-size:12px;fill:#2e4a6b;font-weight:600">LOOP 1 · research while 60 is inside [low, high]</text>
+    <!-- LOOP 2 rewrite: rules/reviewer -> write -->
+    <g stroke="#c23a1c" stroke-width="2" stroke-dasharray="7 5" fill="none" marker-end="url(#r)">
+      <path d="M1500 778 V 800 H 1330 V 780"/>
+      <path d="M1165 870 H 1180 V 760 H 1193"/>
+    </g>
+    <text x="1300" y="815" style="font-size:12px;fill:#c23a1c;font-weight:600">LOOP 2 · rewrite (≤4)</text>
+    <!-- LOOP 3 learn from edits -->
+    <g stroke="#8a6a1f" stroke-width="2" stroke-dasharray="7 5" fill="none" marker-end="url(#k)">
+      <path d="M1500 1016 V 990 H 1400 V 900 H 1392"/>
+      <path d="M1292 826 V 780"/>
+    </g>
+    <text x="1404" y="1004" style="font-size:12px;fill:#8a6a1f;font-weight:600">LOOP 3 · learn</text>
+  </svg>
+</div>
+<div class="legend">
+  <div><span class="key" style="border-color:#2e4a6b"></span><b>Loop 1 · Research more.</b> Code scores; when the 60 line sits inside the range, the planner picks one tool (page, search or job board). Max 5 calls.</div>
+  <div><span class="key" style="border-color:#c23a1c"></span><b>Loop 2 · Rewrite.</b> A draft that breaks a rule, or scores under 7/10 with the reviewer, is rewritten with the exact errors. Max 4 drafts, else held.</div>
+  <div><span class="key" style="border-color:#8a6a1f"></span><b>Loop 3 · Learn from edits.</b> When she edits a draft, the before/after pair guides the next drafts.</div>
+  <div><span class="key" style="border-color:#1b1b1a;border-top-style:solid"></span><b>Main flow.</b> Steps ① to ⑦. One bad domain never stops the batch: it gets a status and a reason.</div>
+</div>
+<div class="stack">
+  <span><b>Next.js 16</b>UI + API routes</span>
+  <span><b>Vercel</b>hosting, 300 s functions</span>
+  <span><b>Gemini Flash</b>extract, plan, write, review</span>
+  <span><b>Google Search grounding</b>external facts</span>
+  <span><b>Jina Reader</b>JS-only pages</span>
+  <span><b>Greenhouse · Lever · Ashby</b>job APIs</span>
+  <span><b>Hunter.io</b>people + email</span>
+  <span><b>Resend</b>send to my inbox</span>
+  <span><b>GitHub</b>code</span>
+</div>
+</body></html>
