@@ -136,7 +136,7 @@ export type DraftAttempt = {
   body: string;
   hookFactId: string | null;
   checks: Check[];
-  review: { specificity: number; relevance: number; reply_likelihood: number; avg: number; critique: string } | null;
+  review: { specificity: number; relevance: number; reply_likelihood: number; avg: number; critique: string; unsupported?: string[] } | null;
   passed: boolean;
 };
 

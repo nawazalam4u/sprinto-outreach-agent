@@ -103,24 +103,40 @@ export function validateDraft(
 type Gen = { subject: string; body: string; hook: string; hook_fact_id: string; why_this_angle: string };
 type Review = { specificity: number; relevance: number; reply_likelihood: number; critique: string };
 
-async function review(d: Gen, poc: Contact, state: CompanyState, usage: Usage): Promise<DraftAttempt["review"]> {
-  const { data } = await geminiJson<Review>({
+async function review(d: Gen, poc: Contact, state: CompanyState, facts: Fact[], usage: Usage): Promise<DraftAttempt["review"]> {
+  const { data } = await geminiJson<Review & { unsupported_claims?: string[] }>({
     usage,
-    system: "You are a demanding VP of Sales reviewing cold emails before they go out. You are hard to impress.",
+    system: "You are Sprinto's Head of Sales reviewing an SDR's cold email before it goes out. You are fair, specific and strict about facts.",
     prompt: `Recipient: ${poc.name}, ${poc.title} at ${state.company_name ?? state.domain} (${state.one_liner ?? ""}).
+Certifications they hold: ${state.certifications.join(", ") || "none published"}.
+
+Evidence the email is allowed to rely on:
+${factSheet(facts)}
+
+Sprinto claims allowed: ${SPRINTO_FACTS.join(" ")}
+
 Subject: ${d.subject}
 Body:
 ${d.body}
 
-Score 0-10 each:
-- specificity: could this email only have been sent to this company? (generic = low)
-- relevance: does the pain match what this role worries about now?
-- reply_likelihood: would a busy ${poc.title} reply?
-Then a critique: the single most important fix, in one or two sentences.
-Return JSON: {"specificity":n,"relevance":n,"reply_likelihood":n,"critique":"..."}`,
+1. FACT CHECK. List every statement about the company or person that is NOT supported by the evidence above (e.g. an expansion, a team change, a customer, a deadline that is not listed). General statements about the industry or the role are fine. Return [] if none.
+2. Score 0-10 on this scale:
+   9-10 exceptional, could only be written by someone who studied this company; 7-8 specific and sendable with at most light edits; 5-6 reads like a template with the name swapped in; 0-4 wrong, generic or off-putting.
+   - specificity: could this email only have been sent to this company?
+   - relevance: does the pain match what a ${poc.title} worries about?
+   - reply_likelihood: would a busy ${poc.title} reply?
+3. critique: the single most important fix, in one or two sentences.
+Return JSON: {"unsupported_claims":["..."],"specificity":n,"relevance":n,"reply_likelihood":n,"critique":"..."}`,
   });
   const s = (n: unknown) => Math.max(0, Math.min(10, Number(n) || 0));
-  const r = { specificity: s(data.specificity), relevance: s(data.relevance), reply_likelihood: s(data.reply_likelihood), critique: String(data.critique ?? "") };
+  const unsupported = (data.unsupported_claims ?? []).filter((x) => typeof x === "string" && x.trim());
+  const r = {
+    specificity: s(data.specificity),
+    relevance: s(data.relevance),
+    reply_likelihood: s(data.reply_likelihood),
+    critique: unsupported.length ? `Unsupported claim: ${unsupported.join("; ")}. ${data.critique ?? ""}` : String(data.critique ?? ""),
+    unsupported,
+  };
   return { ...r, avg: Math.round(((r.specificity + r.relevance + r.reply_likelihood) / 3) * 10) / 10 };
 }
 
@@ -205,8 +221,8 @@ Return JSON: {"subject":"...","body":"...","hook":"the hook phrase","hook_fact_i
     const checks = validateDraft(d, poc, state, facts);
     const failed = checks.filter((c) => !c.pass);
     let rev: DraftAttempt["review"] = null;
-    if (!failed.length) rev = await review(d, poc, state, usage);
-    const passed = !failed.length && (rev?.avg ?? 0) >= REVIEW_PASS;
+    if (!failed.length) rev = await review(d, poc, state, facts, usage);
+    const passed = !failed.length && (rev?.avg ?? 0) >= REVIEW_PASS && !(rev?.unsupported?.length ?? 0);
     attempts.push({ n, subject: d.subject, body: d.body, hookFactId: d.hook_fact_id ?? null, checks, review: rev, passed });
     emit(`Draft ${n}: ${failed.length ? `${failed.length} rule(s) failed: ${failed.map((c) => c.name).join("; ")}` : `rules pass · reviewer ${rev?.avg}/10`}${passed ? " ✓" : ""}`);
     if (passed) {
@@ -223,7 +239,9 @@ Return JSON: {"subject":"...","body":"...","hook":"the hook phrase","hook_fact_i
       };
     }
     prompt = `${base}\n\nYour previous draft was rejected. Fix exactly this:\n${
-      failed.length ? failed.map((c) => `- ${c.name}${c.detail ? ` (${c.detail})` : ""}`).join("\n") : `- Reviewer (${rev?.avg}/10): ${rev?.critique}`
+      failed.length
+        ? failed.map((c) => `- ${c.name}${c.detail ? ` (${c.detail})` : ""}`).join("\n")
+        : `- Reviewer (${rev?.avg}/10): ${rev?.critique}${rev?.unsupported?.length ? `\n- Remove these unsupported claims: ${rev.unsupported.join("; ")}` : ""}`
     }\nPrevious draft:\nSubject: ${d.subject}\n${d.body}`;
   }
   // none passed: keep the best attempt for the human, but it is HELD

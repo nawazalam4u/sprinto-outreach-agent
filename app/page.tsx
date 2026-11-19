@@ -73,7 +73,11 @@ export default function Home() {
   const sent = list.filter((r) => r.state.status === "sent");
   const funnel = [
     { label: "Researched", v: n, drop: "" },
-    { label: "Passed the hard gates", v: passedGates.length, drop: dropReasons(list.filter((r) => !passedGates.includes(r)), (r) => r.gates.find((g) => g.status === "fail")?.name ?? (r.pages[0]?.outcome !== "OK" ? "Site unreadable" : "Unclear")) },
+    { label: "Passed the hard gates", v: passedGates.length, drop: dropReasons(list.filter((r) => !passedGates.includes(r)), (r) => {
+      const g = r.gates.find((x) => x.status === "fail");
+      if (g) return /software/.test(g.name) ? "Not B2B software" : /rival|Sprinto/.test(g.name) ? (/Sprinto customer/.test(g.detail) ? "Already a Sprinto customer" : "Uses a rival tool or is one") : "Outside the size band";
+      return r.pages[0]?.outcome && r.pages[0].outcome !== "OK" ? `Site unreadable (${r.pages[0].outcome.toLowerCase()})` : "Unclear what they sell";
+    }) },
     { label: "Scored 60+ (qualified)", v: qualified.length, drop: dropReasons(passedGates.filter((r) => !qualified.includes(r)), (r) => (r.state.verdict ? VERDICT_LABEL[r.state.verdict] : "—")) },
     { label: "Named person found", v: withPoc.length, drop: qualified.length - withPoc.length ? `${qualified.length - withPoc.length} with no named decision-maker` : "" },
     { label: "Email passed every check", v: passedEmail.length, drop: withPoc.length - passedEmail.length ? `${withPoc.length - passedEmail.length} held` : "" },
