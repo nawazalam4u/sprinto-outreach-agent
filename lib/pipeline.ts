@@ -163,12 +163,29 @@ export async function runPipeline(input: RunInput, emit: (e: RunEvent) => void):
 
     // ---------- 5. Pain points
     step(5, "running");
-    result.painPoints = await painPoints(state, poc, ctx.facts, usage);
+    try {
+      result.painPoints = await painPoints(state, poc, ctx.facts, usage);
+    } catch (e) {
+      step(5, "error", `AI unavailable: ${scrub((e as Error).message).slice(0, 80)}`);
+      skipRest(6, "Held: AI unavailable, nothing sent");
+      state.status = "held";
+      result.send = { status: "held", reason: "AI model unavailable while writing; re-run later" };
+      return finish();
+    }
     step(5, "done", result.painPoints.map((p) => p.title).join(" · "));
 
     // ---------- 6. Draft, validate in code, AI review, rewrite (max 4)
     step(6, "running");
-    const draft = await writeEmail(state, poc, result.painPoints, ctx.facts, usage, input.style ?? [], senderName(), log(6), t0 + 240_000);
+    let draft;
+    try {
+      draft = await writeEmail(state, poc, result.painPoints, ctx.facts, usage, input.style ?? [], senderName(), log(6), t0 + 240_000);
+    } catch (e) {
+      step(6, "error", `AI unavailable: ${scrub((e as Error).message).slice(0, 80)}`);
+      step(7, "skipped", "Held: nothing is sent without a checked draft");
+      state.status = "held";
+      result.send = { status: "held", reason: "AI model unavailable while writing; re-run later" };
+      return finish();
+    }
     result.draft = draft;
     const last = draft.attempts[draft.attempts.length - 1];
     step(

@@ -169,7 +169,7 @@ async function hedged(list: string[], key: string, opts: Opts, m: "interactions"
       const ctrl = new AbortController();
       ctrls.push(ctrl);
       inflight++;
-      const timer = setTimeout(() => ctrl.abort(), opts.search ? 60_000 : 45_000);
+      const timer = setTimeout(() => ctrl.abort(), opts.search ? 70_000 : 70_000);
       attemptOnce(model, key, opts, m, ctrl.signal)
         .then((r) => {
           if (done) return;
@@ -218,7 +218,16 @@ export async function gemini(opts: Opts): Promise<GeminiOut> {
   let lastErr: GeminiError | null = null;
   for (const m of modes) {
     try {
-      const { r, model } = await hedged(list, key, opts, m);
+      let res: { r: Attempt; model: string };
+      try {
+        res = await hedged(list, key, opts, m);
+      } catch (e) {
+        // every healthy model failed: give the benched ones one more chance before giving up
+        const rest = ordered.filter((x) => !list.includes(x));
+        if (!rest.length || (e as GeminiError).status === 401 || (e as GeminiError).status === 403) throw e;
+        res = await hedged(rest, key, opts, m);
+      }
+      const { r, model } = res;
       if (opts.usage) {
         opts.usage.calls += 1;
         opts.usage.inTokens += r.inTok;

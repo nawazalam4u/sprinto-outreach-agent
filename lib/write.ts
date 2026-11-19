@@ -214,19 +214,32 @@ Return JSON: {"subject":"...","body":"...","hook":"the hook phrase","hook_fact_i
       emit("Time limit reached: keeping the best draft so far (held unless it passed)");
       break;
     }
-    const { data } = await geminiJson<Gen>({
-      usage,
-      temperature: 0.5 + n * 0.1,
-      system: "You are Sprinto's best SDR. You write short, specific, human cold emails that busy technical leaders answer. You never invent facts.",
-      prompt,
-    });
+    let data: Gen;
+    try {
+      ({ data } = await geminiJson<Gen>({
+        usage,
+        temperature: 0.5 + n * 0.1,
+        system: "You are Sprinto's best SDR. You write short, specific, human cold emails that busy technical leaders answer. You never invent facts.",
+        prompt,
+      }));
+    } catch (e) {
+      if (!attempts.length) throw e; // nothing written yet: the caller holds the email
+      emit(`Draft ${n}: AI unavailable, keeping the best earlier draft`);
+      break;
+    }
     // evidence ids belong in the dossier, never in the email: strip them deterministically
     const clean = (t: string) => t.replace(/\s*\[(E\d+(\s*,\s*E\d+)*)\]/g, "").replace(/\r/g, "").trim();
     const d: Gen = { ...data, subject: clean(data.subject ?? ""), body: clean(data.body ?? "") };
     const checks = validateDraft(d, poc, state, facts);
     const failed = checks.filter((c) => !c.pass);
     let rev: DraftAttempt["review"] = null;
-    if (!failed.length) rev = await review(d, poc, state, facts, usage);
+    if (!failed.length) {
+      try {
+        rev = await review(d, poc, state, facts, usage);
+      } catch {
+        rev = null; // no review = not passed; try another draft
+      }
+    }
     const passed = !failed.length && (rev?.avg ?? 0) >= REVIEW_PASS && !(rev?.unsupported?.length ?? 0);
     attempts.push({ n, subject: d.subject, body: d.body, hookFactId: d.hook_fact_id ?? null, checks, review: rev, passed });
     emit(`Draft ${n}: ${failed.length ? `${failed.length} rule(s) failed: ${failed.map((c) => c.name).join("; ")}` : `rules pass · reviewer ${rev?.avg}/10`}${passed ? " ✓" : ""}`);
