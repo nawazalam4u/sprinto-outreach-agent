@@ -117,6 +117,15 @@ describe("email validator", () => {
       "No banned or scraping-revealing phrases",
     ]));
   });
+  it("does not treat framework names or meeting lengths as invented numbers", () => {
+    const body = good.body.replace("Would a short walkthrough", "Is SOC 2 or ISO 27001 on your list, and would a 15-minute walkthrough");
+    const c = validateDraft({ ...good, body }, poc, s, facts).find((x) => x.name === "Every number appears in the evidence")!;
+    expect(c.pass).toBe(true);
+  });
+  it("rejects negative or scraping-revealing lines", () => {
+    const body = good.body.replace("Answering those", "After the restructuring, answering those");
+    expect(validateDraft({ ...good, body }, poc, s, facts).find((x) => x.name === "No banned or scraping-revealing phrases")!.pass).toBe(false);
+  });
   it("rejects a hook with no verified evidence", () => {
     const failed = validateDraft({ ...good, hook_fact_id: "E99" }, poc, s, facts).filter((c) => !c.pass).map((c) => c.name);
     expect(failed).toContain("Hook rests on a verified, quoted fact");

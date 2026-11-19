@@ -5,7 +5,8 @@ import { useStore } from "../components/store";
 import { StatusPill, VerdictPill, fmtMs } from "../components/ui";
 import type { CompanyResult, CompanyState, ManualPoc, RunEvent, StepId } from "@/lib/types";
 
-const SAMPLE = ["hoppscotch.io", "plane.so", "cal.com", "keka.com", "vanta.com", "zomato.com"];
+// A mix that shows every outcome: qualifies, already a Sprinto customer, a rival vendor, not B2B, nurture
+const SAMPLE = ["reflex.dev", "airmeet.com", "rime.ai", "plane.so", "vanta.com", "zomato.com", "spendflo.com"];
 const STEP_NAMES = ["Scrape", "Extract", "Qualify", "Person", "Pains", "Email", "Send"];
 const MAX = 15;
 

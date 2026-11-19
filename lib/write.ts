@@ -48,7 +48,7 @@ Return JSON: {"pain_points":[{"title":"max 10 words","why":"1-2 sentences: data 
 const SPELLED = /\b(two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|fifty|sixty|hundred|thousand|million|billion)\b/i;
 const HEDGES = /\b(might|maybe|perhaps|possibly|probably|likely|could be|i think|i guess|seems)\b/gi;
 const FRAMEWORKS = /\b(soc\s?2|iso\s?27001|gdpr|hipaa|pci(\s|-)?dss|iso\s?42001|dora|nis2)\b/gi;
-const SCRAPE_TELLS = ["your website", "your site", "endpoint", "404", "scrap", "crawl", "i noticed on", "according to your"];
+const SCRAPE_TELLS = ["your website", "your site", "endpoint", "404", "scrap", "crawl", "i noticed on", "according to your", "restructuring", "layoff"];
 const STOP = new Set(["the", "and", "for", "with", "that", "your", "from", "this", "their", "into", "platform", "software", "teams", "company", "companies", "solution", "tool"]);
 
 export function productTerms(state: CompanyState, facts: Fact[]): string[] {
@@ -71,7 +71,9 @@ export function validateDraft(
   const terms = productTerms(state, facts);
   const firstSentence = body.split(/(?<=[.?])\s/)[0]?.toLowerCase() ?? "";
   const evidenceText = facts.filter((f) => f.verified).map((f) => `${f.value} ${f.quote}`).join(" ");
-  const numbers = (body.match(/\d[\d,.%]*/g) ?? []).map((n) => n.replace(/[.,]$/, ""));
+  // framework names (SOC 2, ISO 27001) and meeting lengths are not factual claims
+  const claimText = body.replace(/soc\s?2|iso\s?\/?\s?(iec\s?)?27001(:20\d\d)?|pci[\s-]?dss|type\s?(ii|2|i|1)\b|\d+[- ]?(minute|min)s?\b/gi, "");
+  const numbers = (claimText.match(/\d[\d,.%]*/g) ?? []).map((n) => n.replace(/[.,]$/, ""));
   const badNumbers = numbers.filter((n) => !evidenceText.includes(n));
   const hedges = body.match(HEDGES) ?? [];
   const frameworks = new Set((body.match(FRAMEWORKS) ?? []).map((x) => x.toLowerCase().replace(/\s/g, "")));
@@ -122,6 +124,18 @@ Return JSON: {"specificity":n,"relevance":n,"reply_likelihood":n,"critique":"...
   return { ...r, avg: Math.round(((r.specificity + r.relevance + r.reply_likelihood) / 3) * 10) / 10 };
 }
 
+// The angle follows from what they already have: get it, finish it, or keep it and add the next one.
+export function angleFor(state: CompanyState): string {
+  const c = state.certifications.join(" ").toLowerCase();
+  if (c.includes("soc") && c.includes("27001"))
+    return "They are certified. Sell staying continuously audit-ready and answering security questionnaires fast with a trust centre, without engineers collecting evidence.";
+  if (c.includes("soc"))
+    return "They already hold SOC 2. Sell keeping it continuous with less engineering time, and reusing the same evidence for the next framework their buyers ask for (ISO 27001 for EU/UK, HIPAA for health).";
+  if (c.includes("27001")) return "They hold ISO 27001. Sell adding SOC 2 for US enterprise buyers by reusing the same controls and evidence.";
+  if (state.certification_status === "in_progress") return "Their audit is in progress. Sell getting it done faster and with fewer engineering hours.";
+  return "No certification is published. Sell getting SOC 2 before it blocks the next enterprise deal, without pulling engineers off the roadmap.";
+}
+
 export async function writeEmail(
   state: CompanyState,
   poc: Contact,
@@ -140,8 +154,17 @@ export async function writeEmail(
         .join("\n\n")}\n`
     : "";
 
+  const angle = angleFor(state);
   const base = `Write a cold email from ${senderName} (Sprinto) to ${poc.name}, ${poc.title} at ${company}.
 What they sell: ${state.one_liner ?? "see evidence"}
+Their certification status: ${state.certifications.length ? `already hold ${state.certifications.join(", ")}` : state.certification_status === "in_progress" ? "a certification is in progress" : "no certification published"}.
+THE ANGLE (decided from the evidence, follow it): ${angle}
+
+Structure, 4 short sentences plus sign-off:
+1. "${poc.first_name}," + what they sell in their own words + the hook (one specific fact from the evidence).
+2. The INSIGHT: why THEIR business model makes compliance painful in a specific way (e.g. deploying into customers' cloud means every client runs its own security review; healthcare buyers mean HIPAA; EU customers mean ISO 27001 / GDPR). This sentence is what makes it not a template.
+3. One Sprinto proof line that answers exactly that insight.
+4. One specific question about THEIR situation that is easy to answer (e.g. "How are you handling security reviews for on-prem deployments today?"), not a generic meeting request.
 
 Pain points:
 ${pains.map((p, i) => `${i + 1}. ${p.title}: ${p.why} (evidence ${p.factIds.join(", ")})`).join("\n")}
@@ -155,10 +178,13 @@ ${styleBlock}
 Rules (checked by code, the email is rejected if any fails):
 - Start with "${poc.first_name}," then, in the same first sentence, join what they sell (use a word from their product) with the hook: one specific true fact from the evidence.
 - No greeting word (no Hi / Hello / Dear). No exclamation marks. No markdown.
-- Then one sentence linking the hook to pain point 1, one proof sentence about Sprinto, and exactly ONE specific question as the close (the only "?" in the email).
+- Exactly ONE question in the whole email: the closing one.
 - 60-100 words including the sign-off line "${senderName}".
 - Numbers only if they appear in the evidence, written as digits. No spelled-out numbers.
 - Never mention their website, pages, scraping, or "I noticed". Never say "recent" unless the funding fact is dated within 6 months.
+- Name ONE framework their buyers are likely to ask for (usually SOC 2; ISO 27001 for EU/UK buyers). Never put evidence ids like [E3] in the email.
+- Stay positive and factual: never mention layoffs, restructuring, incidents or anything that could read as a dig.
+- Never claim they lack something the evidence says they have.
 - At most one hedge word. Name at most two frameworks.
 - Subject: 3-7 words, must contain "${company}" plus a hook or product word.
 
@@ -173,7 +199,9 @@ Return JSON: {"subject":"...","body":"...","hook":"the hook phrase","hook_fact_i
       system: "You are Sprinto's best SDR. You write short, specific, human cold emails that busy technical leaders answer. You never invent facts.",
       prompt,
     });
-    const d: Gen = { ...data, subject: (data.subject ?? "").trim(), body: (data.body ?? "").replace(/\r/g, "").trim() };
+    // evidence ids belong in the dossier, never in the email: strip them deterministically
+    const clean = (t: string) => t.replace(/\s*\[(E\d+(\s*,\s*E\d+)*)\]/g, "").replace(/\r/g, "").trim();
+    const d: Gen = { ...data, subject: clean(data.subject ?? ""), body: clean(data.body ?? "") };
     const checks = validateDraft(d, poc, state, facts);
     const failed = checks.filter((c) => !c.pass);
     let rev: DraftAttempt["review"] = null;

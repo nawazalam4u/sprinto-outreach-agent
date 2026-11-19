@@ -199,7 +199,12 @@ export async function findPoc(
   contacts.sort((a, b) => b.role_score - a.role_score);
   const finalBand = roleBand(state.headcount);
   const top = contacts[0];
-  top.rank_reason = `${top.title} ranks highest for a ${finalBand.band} company. ${finalBand.why}`;
+  const ideal = finalBand.roles[0];
+  const bestScore = finalBand.patterns[0][1];
+  top.rank_reason =
+    top.role_score >= bestScore - 5
+      ? `${top.title} is the first-choice role for a ${finalBand.band} company. ${finalBand.why}`
+      : `For a ${finalBand.band} company the first choice is ${ideal}, but none was listed among the ${contacts.length} people found. ${top.title} is the most senior remaining owner of the decision. ${finalBand.why}`;
   for (const c of contacts.slice(1)) c.rank_reason = `Ranked below: ${c.title} (${c.role_score} vs ${top.role_score})`;
   if (top.role_score < 50) top.rank_reason += " Low title match: flagged for review.";
   return { poc: top, contacts: contacts.slice(0, 6), method };
