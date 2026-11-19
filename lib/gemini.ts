@@ -13,7 +13,7 @@ const PRICE_OUT = 2.5;
 
 function models(): string[] {
   const env = process.env.GEMINI_MODEL?.trim();
-  return [...new Set([env, "gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-3.5-flash", "gemini-3.1-flash-lite"].filter(Boolean) as string[])];
+  return [...new Set([env, "gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash"].filter(Boolean) as string[])];
 }
 
 export class GeminiError extends Error {
@@ -67,6 +67,11 @@ function collectSources(node: unknown, out: { title: string; uri: string }[]) {
 }
 
 let mode: "interactions" | "generate" | null = null;
+const benchedUntil = new Map<string, number>();
+const bench = (model: string, ms: number) => {
+  benchedUntil.set(model, Date.now() + ms);
+  if (workingModel === model) workingModel = null;
+};
 let workingModel: string | null = null;
 
 async function viaInteractions(model: string, key: string, opts: Opts, signal: AbortSignal) {
@@ -128,7 +133,10 @@ async function viaGenerate(model: string, key: string, opts: Opts, signal: Abort
 export async function gemini(opts: Opts): Promise<GeminiOut> {
   const key = process.env.GEMINI_API_KEY?.trim();
   if (!key) throw new GeminiError("GEMINI_API_KEY is not set");
-  const list = workingModel ? [workingModel, ...models().filter((m) => m !== workingModel)] : models();
+  const ordered = workingModel ? [workingModel, ...models().filter((m) => m !== workingModel)] : models();
+  // circuit breaker: skip models that just failed or hung, unless every model is benched
+  const healthy = ordered.filter((m) => (benchedUntil.get(m) ?? 0) < Date.now());
+  const list = healthy.length ? healthy : ordered;
   const modes: ("interactions" | "generate")[] = mode ? [mode] : ["interactions", "generate"];
   let lastErr: GeminiError | null = null;
 
@@ -137,7 +145,7 @@ export async function gemini(opts: Opts): Promise<GeminiOut> {
       for (let attempt = 0; attempt < 5; attempt++) {
         await pace();
         const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), opts.search ? 60_000 : 45_000);
+        const timer = setTimeout(() => ctrl.abort(), opts.search ? 40_000 : 25_000);
         try {
           const r = m === "interactions" ? await viaInteractions(model, key, opts, ctrl.signal) : await viaGenerate(model, key, opts, ctrl.signal);
           if (opts.usage) {
@@ -157,11 +165,20 @@ export async function gemini(opts: Opts): Promise<GeminiOut> {
           const err = e instanceof GeminiError ? e : new GeminiError(String((e as Error)?.message ?? e));
           lastErr = err;
           if (err.status === 401 || err.status === 403) throw err; // bad key
-          if (err.status === 404) break; // model or endpoint not available: next model
-          if (err.status === 503 || !err.status) break; // overloaded or timed out: next model now
+          if (err.status === 404) {
+            bench(model, 3_600_000);
+            break; // model or endpoint not available: next model
+          }
+          if (err.status === 503 || !err.status) {
+            bench(model, 180_000);
+            break; // overloaded or timed out: bench it and use the next model now
+          }
           if (/quota/i.test(err.message) && opts.search) throw err; // search quota: caller falls back
           if (err.status === 429 || err.status === 500) {
-            if (attempt >= 2) break;
+            if (attempt >= 2) {
+              bench(model, 120_000);
+              break;
+            }
             await sleep(4000 * (attempt + 1));
             continue;
           }
