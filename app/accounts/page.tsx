@@ -16,9 +16,9 @@ function Row({ r }: { r: CompanyResult }) {
       </td>
       <td><VerdictPill v={r.state.verdict} /></td>
       <td className="r"><Score r={r} /></td>
-      <td className="small">{r.poc ? `${r.poc.name} · ${r.poc.title}` : <span className="muted">—</span>}</td>
+      <td className="small hide-m">{r.poc ? `${r.poc.name} · ${r.poc.title}` : <span className="muted">—</span>}</td>
       <td><StatusPill s={r.state.status} /></td>
-      <td className="small muted">{r.state.fixed_verdict && r.state.verdict && r.state.fixed_verdict !== r.state.verdict ? `${VERDICT_LABEL[r.state.fixed_verdict]} → ${VERDICT_LABEL[r.state.verdict]}` : "—"}</td>
+      <td className="small muted hide-m">{r.state.fixed_verdict && r.state.verdict && r.state.fixed_verdict !== r.state.verdict ? `${VERDICT_LABEL[r.state.fixed_verdict]} → ${VERDICT_LABEL[r.state.verdict]}` : "—"}</td>
     </tr>
   );
 }
@@ -65,9 +65,9 @@ export default function Accounts() {
                 <th>Company</th>
                 <th>Verdict</th>
                 <th className="r">Score</th>
-                <th>Person</th>
+                <th className="hide-m">Person</th>
                 <th>Status</th>
-                <th>Changed by research</th>
+                <th className="hide-m">Changed by research</th>
               </tr>
             </thead>
             <tbody>{rows.map((r) => <Row key={r.domain} r={r} />)}</tbody>

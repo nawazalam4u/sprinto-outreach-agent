@@ -4,6 +4,19 @@ Give it a list of company domains. For each one it reads the website, decides wh
 
 MESA C4 · Term 2 · Case 02 ("Cold Outreach, at Scale").
 
+**Live app:** https://sprinto-outreach-agent-delta.vercel.app · **Code:** https://github.com/nawazalam4u/sprinto-outreach-agent
+
+### Results from live runs (Nov 2026)
+| | |
+|---|---|
+| Companies researched | 14 real domains |
+| Time per company | 37 s average (89 s when an email is written), vs 15–20 min by hand |
+| Cost per company | about $0.005 average, about $0.013 when an email is written |
+| Verdicts changed by the agent loop | 7 of 14 (the homepage alone said "insufficient data") |
+| Emails | sent to own inbox for Reflex and Airmeet (reviewer 8.3/10); Rime held because the fact-check found an unsupported claim |
+| Correctly excluded | plane.so and rocketlane.com (trust centre already on Sprinto), vanta.com (rival vendor), zomato.com (not B2B), spendflo and spotdraft (already hold SOC 2 + ISO 27001) |
+| Handled gracefully | hevodata.com (robots.txt says no bots), sprinto.com (403 blocked) |
+
 - **Brief (Nine Checks, Five Decisions, Components Map):** `/brief` in the app, plus [`docs/nine-checks.png`](docs/nine-checks.png) and [`docs/components-map.png`](docs/components-map.png)
 - **PRD:** [`docs/PRD.md`](docs/PRD.md) · **Decisions:** [`docs/DECISIONS.md`](docs/DECISIONS.md) · **Design brief:** [`docs/PRODUCT.md`](docs/PRODUCT.md)
 

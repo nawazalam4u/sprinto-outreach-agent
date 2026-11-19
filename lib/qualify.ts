@@ -76,7 +76,8 @@ export function deriveState(state: CompanyState, facts: Fact[], securityRead: bo
   const tool = by("compliance_tool").find((f) => COMPETITOR_TOOLS.some((t) => f.value.toLowerCase().includes(t.toLowerCase())));
   state.compliance_tool = tool ? (COMPETITOR_TOOLS.find((t) => tool.value.toLowerCase().includes(t.toLowerCase())) ?? tool.value) : null;
 
-  state.compliance_triggers = uniq(by("compliance_trigger").map((f) => f.value));
+  // a trigger is a reason to buy compliance; layoffs or restructuring never count
+  state.compliance_triggers = uniq(by("compliance_trigger").map((f) => f.value)).filter((t) => !/layoff|restructur|lay off|job cuts|downsiz/i.test(t));
   const inProgress = state.compliance_triggers.some((t) => IN_PROGRESS.test(t));
   if (state.certifications.length) state.certification_status = "certified";
   else if (inProgress) state.certification_status = "in_progress";
@@ -397,7 +398,7 @@ async function newsSearch(ctx: LoopCtx): Promise<string> {
   const list = items.map((it, i) => `H${i + 1} [${it.date}] ${it.title}`).join("\n");
   const { data } = await geminiJson<{ facts?: { field: string; value: string; headline: string }[] }>({
     usage: ctx.usage,
-    prompt: `Company: ${name} (website ${ctx.domain}). Below are news headlines. Extract ONLY facts about THIS company (not a namesake): funding_stage (e.g. Series A), funding_date (the headline date, e.g. "12 Mar 2025"), headcount, compliance_trigger, customer_logo.
+    prompt: `Company: ${name} (website ${ctx.domain}). Below are news headlines. Extract ONLY facts about THIS company (not a namesake): funding_stage (e.g. Series A), funding_date (the headline date, e.g. "12 Mar 2025"), headcount, customer_logo. Nothing else.
 Give the headline id for each fact. If no headline is clearly about this company, return {"facts":[]}.
 ${list}
 Return JSON: {"facts":[{"field":"...","value":"...","headline":"H3"}]}`,
@@ -406,7 +407,7 @@ Return JSON: {"facts":[{"field":"...","value":"...","headline":"H3"}]}`,
   for (const f of data.facts ?? []) {
     const idx = Number(String(f.headline ?? "").replace(/\D/g, "")) - 1;
     const it = items[idx];
-    if (!it || !["funding_stage", "funding_date", "headcount", "compliance_trigger", "customer_logo"].includes(f.field) || !f.value) continue;
+    if (!it || !["funding_stage", "funding_date", "headcount", "customer_logo"].includes(f.field) || !f.value) continue;
     const mentions = it.title.toLowerCase().includes(name.toLowerCase().slice(0, 6));
     ctx.facts.push({ id: nextFactId(), field: f.field as Fact["field"], value: String(f.value).slice(0, 120), quote: `${it.title} (${it.date})`, url: it.link, verified: mentions, via: "news" });
     if (mentions) n++;
