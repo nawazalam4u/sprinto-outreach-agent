@@ -411,7 +411,7 @@ export default function Drawer() {
               <div className="row" style={{ marginTop: 8 }}>
                 <VerdictPill v={r.state.verdict} />
                 <StatusPill s={r.state.status} />
-                {st && <span className="pill" style={{ background: "rgba(246,241,230,.12)", color: "var(--mango-2)" }}>{st.text}</span>}
+                {st && !["SENT", "HELD", "DRAFTED", "CHECK"].includes(st.text) && <span className="pill" style={{ background: "rgba(246,241,230,.12)", color: "var(--mango-2)" }}>{st.text}</span>}
               </div>
             </div>
           </div>
